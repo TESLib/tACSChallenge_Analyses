@@ -44,6 +44,16 @@ tmp_matrix = tmp_matrix(2:end,:);
 %% Extract Data
 % Delta T
 data_array.raw_dt = diff(tmp_matrix(:,1));
+
+% handle reset of processor clock in teensy during recording
+% check if any dt is negative (step backwards in time)
+if sum(data_array.raw_dt<0) > 0
+    
+    % replace with the mean of all other dt
+    data_array.raw_dt(data_array.raw_dt < 0) =  mean(data_array.raw_dt(data_array.raw_dt > 0),'omitnan');
+    
+end
+
 data_array.dt = mean(data_array.raw_dt,'omitnan')/10^6; %uS to Seconds
 % Sampling Rate
 data_array.Fs = 1/data_array.dt;
