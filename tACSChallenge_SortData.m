@@ -1,6 +1,6 @@
 function trials_sorted = tACSChallenge_SortData(data_path, subj, conditions)
 %% script originally written by Florian Kasten, University of Oldenburg
-%% modified by Benedikt Zoefel, CNRS Toulouse, in October 2021 and April 2022 (clean tACS signal)
+%% modified by Benedikt Zoefel, CNRS Toulouse, in October 2021, April 2022 (clean tACS signal), and June 2022 (correction for imperfect stimulation frequency)
 %% modified by Florian Kasten in March 2022 (correction of target onsets)
 
 %% data_path refers to the folder the data is located in (each subject in separate folder).
@@ -42,16 +42,21 @@ for c = 1:length(conditions)
         % clean the signal - we will fit a sine wave, starting a few
         % seconds before the first target
         tACS_to_fit = tACS(LEDLat(1)-1000:end);
-        % FFT is an approximate sine fit
-        % use an integer multiple of the tacs period as fft length
-        n_fft = length(tACS_to_fit)-rem(length(tACS_to_fit),0.1*data.Fs);
-        f = fft(tACS_to_fit,n_fft); fft_res = data.Fs/n_fft;
-        % f_target is the sine fit at 10 Hz
-        f_target = f(round(10/fft_res+1));
         
+        % sometimes the tACS signal is not precisely 10 Hz. we therefore
+        % estimate its frequency
+        % needs to be in the range 9-11 Hz
+        [filt_b,filt_a] = butter(2,[9/(data.Fs/2) 11/(data.Fs/2)],'bandpass');
+        tACS_filtered = filtfilt(filt_b,filt_a,tACS_to_fit);
+        tACS_filtered_h = hilbert(tACS_filtered);
+        % instantaneous frequency
+        ifq = instfreq(tACS_filtered,data.Fs);
+              
         % now reconstruct tACS sine
-        t_fit = 0:1/data.Fs:length(tACS_to_fit)/data.Fs-1/data.Fs;
-        tACS_sine = cos(2*pi*t_fit*10+angle(f_target));       
+        t_fit = 0:1/round(data.Fs):length(tACS_to_fit)/round(data.Fs)-1/round(data.Fs);
+        % make a sine with the same average frequency and the same phase
+        % (skip the first and last few values to avoid edge effects)
+        tACS_sine = cos(2*pi*t_fit*mean(ifq(4:end-3))+angle(tACS_filtered_h(data.Fs*10+1)));       
         tACS_phase = angle(hilbert(tACS_sine));
         
         %% go through all trials
