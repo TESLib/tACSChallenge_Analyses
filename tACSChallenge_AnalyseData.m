@@ -1,6 +1,6 @@
 function [all_ps,all_bs,all_hit_probs,all_bs_perm,all_pfs,group_level_p,group_level_comp,pf_p] = tACSChallenge_AnalyseData(data_path, subjs, conditions, perm)
 %% script originally written by Benedikt Zoefel, CNRS Toulouse, in October 2021
-%% modified in April 22
+%% modified in April 22 and June 25 (minor fixes)
 %% added permutations and preferred phases in April 24
 
 %% run this script with the following input argments:
@@ -45,13 +45,13 @@ figure
 bar(mean(all_bs,2))
 xlabel('conditions'); xticklabels(conditions); ylabel('modulation strength');
 
-group_level_p = zeros(3,1);
-group_level_comp = zeros(2,1);
+group_level_p = zeros(length(conditions),1);
+group_level_comp = zeros(2,1); % A vs B, A vs C
 pf_p = zeros(2,1);
 
 %% group level statistics
 %% test for phasic effect separately for each condition
-for cond = 1:3
+for cond = 1:length(conditions)
     % observed mean
     currmean = mean(all_bs(cond,:),2);
     % average across subjects in surrogate
