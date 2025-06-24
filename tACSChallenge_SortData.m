@@ -17,7 +17,7 @@ for c = 1:length(conditions)
     trialcounter = 0;
     trials_sorted{c} = [];
     
-    if length(curr_files) ~= 3
+    if length(curr_files) ~= 3 && strcmp('*_Sh_*',conditions{c})==0
         error('number of blocks for at least one condition is not three as expected');
     end
     
